@@ -69,13 +69,15 @@ int main(int argc, char* argv[]) {
   }
 
 
+  
 
-  fullPlot.getPresetBinning("style/sample.binning");
+  Style* stylez = new Style("style/" + stylename);
+  fullPlot.setStyle(stylez);
 
   int totalfiles = 0;
-  for(map<string, Normer*>::iterator it = plots.begin(); it != plots.end(); ++it) {
-    if(needToRenorm) it->second->setUse();
-    fullPlot.addFile(*it->second);
+  for(auto plot_pair: plots) {
+    if(needToRenorm) plot_pair.second->setUse();
+    fullPlot.addFile(*plot_pair.second);
   }
 
   cout << "Finished Normalization" << endl;
@@ -84,8 +86,7 @@ int main(int argc, char* argv[]) {
   Logfile logfile;
   logfile.setHeader(fullPlot.getFilenames("all"));
 
-  Style stylez("style/" + stylename);
-  fullPlot.setStyle(stylez);
+
 
   /// Main loop of function
   fullPlot.CreateStack(final, logfile);
@@ -130,8 +131,8 @@ void read_info(string filename, map<string, Normer*>& plots) {
   }
   info_file.close();
 
-  for(map<string, Normer*>::iterator it = plots.begin(); it != plots.end(); it++) {
-    it->second->setLumi(lumi);
+  for(auto map_pair: plots) {
+    map_pair.second->setLumi(lumi);
   }
 }
 

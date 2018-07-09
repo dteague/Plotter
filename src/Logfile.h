@@ -28,7 +28,6 @@ class Logfile {
   /// Constructor + Destructor
   //// if other is added, put copy constructor and operator=
   Logfile() { logfile.open("log.txt", ios::out);  }
-  ~Logfile() { logfile.close(); }
   Logfile(string logname) { logfile.open(logname, ios::out); }
 
 
@@ -37,7 +36,9 @@ class Logfile {
   void setHeader(vector<string>);
   void addLine(vector<string>);
   void setTrailer();
+  bool replace(std::string& str, const std::string& from, const std::string& to);
 
+  
  private:
   ofstream logfile;
 };

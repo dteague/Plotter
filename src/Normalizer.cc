@@ -286,12 +286,7 @@ void Normer::MergeRootfile( TDirectory *target) {
       // GetPath(), so we can still figure out where we are in the recursion
       MergeRootfile( newdir );
 
-    } else {
-
-      // object is of no type that we know or can handle
-      cout << "Unknown object type, name: "
-	   << obj->GetName() << " title: " << obj->GetTitle() << endl;
-    }
+    } else continue;
 
     // now write the merged histogram (which is "in" obj) to the target file
     // note that this will just store obj in the current directory level,
@@ -300,7 +295,8 @@ void Normer::MergeRootfile( TDirectory *target) {
     if ( obj ) {
       target->cd();
       if(obj->IsA()->InheritsFrom( TTree::Class() ))
-	globChain->Merge(target->GetFile(),0,"keep");
+	continue;
+      //	globChain->Merge(target->GetFile(),0,"keep");
       else
 	obj->Write( key->GetName() );
     }

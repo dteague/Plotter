@@ -50,6 +50,6 @@ clean:
 
 job: Plotter
 	rm *root -f
-	./Plotter config/201607.config
+	./Plotter config/2018_WZ_YR.config
 
 .SUFFIXES: .$(SrcSuf) .cc .o .so

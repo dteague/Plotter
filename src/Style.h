@@ -50,6 +50,8 @@ Plotter class
 #include <stdlib.h>
 #include <iostream>
 #include <array>
+#include "config.h"
+#include "histo_style.h"
 
 using namespace std;
 
@@ -62,6 +64,9 @@ class Style {
   Style& operator=(const Style&);
   ~Style();
 
+  const vector<HistInfo*>& getHistograms() {return histograms;}
+
+  
   void read_info(string);
   void setStyle();
   TStyle* getStyle();
@@ -71,14 +76,22 @@ class Style {
   bool getDivideBins() {return dividebins;}
   bool getBinLimit() {return binlimit;}
   bool getDoOverflow() {return dooverflow;}
- 
+
+  int getColor();
+  void resetColoring();
+  
  private:
+  void setupGeneral(ConfigFile&);
+
   TStyle* styler;
-  map<string, double> values;
-  //  map<string,string> axisLabel = { {} }
+
+  vector<HistInfo*> histograms;
+
   int binlimit = 9;
   double padratio = 3, heightratio = 15, rebinlimit = 0.3, dooverflow= 0;
   bool dividebins = false;
+  vector<int>  color;
+  int color_iter;
 };
 
 #endif
