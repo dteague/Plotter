@@ -14,11 +14,11 @@ string to_string_with_precision(const T a_value, const int n = 6);
 
 /// Main function.  Takes TDirectory with the file you are writing to.  Also takes in logfile
 //  Gets all of the graphs from files in the plotter class and puts them in one graph.
-void Plotter::CreateStack( TDirectory *target, Logfile& logfile) {
+void Plotter::CreateStack( TDirectory *target) {
 
   //// Sets up style here.  Does everytime, just in case.  Probably don't need
   gStyle = styler->getStyle();
-
+  styler->setTDRStyle();
   
   for(auto histos: styler->getHistograms()) {
     setupHistogram();
@@ -41,7 +41,7 @@ void Plotter::CreateStack( TDirectory *target, Logfile& logfile) {
 
     TLegend* leg = createLeg(stack->GetHists(), sigHistos);
 
-    cout << histos->getTitle() << endl;
+    cout << histos->getHistname() << endl;
     target->cd();
     TCanvas *c = new TCanvas(histname, histname);//403,50,600,600);
     stack->SetTitle(histos->getTitle());
@@ -49,6 +49,7 @@ void Plotter::CreateStack( TDirectory *target, Logfile& logfile) {
     for(auto sigh : *sigHistos) sigh->Draw("same");
     leg->Draw();
     c->cd();
+    styler->CMS_lumi((TPad*)gPad);
     c->Write(c->GetName());
     c->Close();
     delete [] bins_test;
@@ -87,7 +88,7 @@ THStack* Plotter::getStack(TList* histos, const char* histoName) {
 
   }
 
-  stack  = sortStack(stack, false);
+  stack  = sortStack(stack, true);
   return stack;
 }
 
@@ -146,17 +147,13 @@ TLegend* Plotter::createLeg(const TList* bgl, const TList* sigl) {
 
   //  if(dataFiles.GetSize() != 0) leg->AddEntry(data, "Data", "lep");
 
-
   for(auto histos : *bgl) {
     leg->AddEntry(histos, histos->GetName(), "f");
   }
 
-
   for(auto histos: *sigl) {
-    leg->AddEntry(histos, histos->GetTitle(), "lep");
+    leg->AddEntry(histos, histos->GetName(), "lep");
   }
-
-
 
   // TH1* mcErrorleg = new TH1I("mcErrorleg", "BG stat. uncer.", 100, 0.0, 4.0);
   // mcErrorleg->SetLineWidth(1);

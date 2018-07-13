@@ -21,11 +21,6 @@ Plotter class
 #ifndef _STYLE_H_
 #define _STYLE_H_
 
-#include <TTree.h>
-#include <TH1.h>
-#include <TFile.h>
-#include <TDirectory.h>
-#include <TClass.h>
 #include <TKey.h>
 #include <TGraphAsymmErrors.h>
 #include <TChain.h>
@@ -38,6 +33,12 @@ Plotter class
 #include <TF1.h>
 #include <TStyle.h>
 #include <TROOT.h>
+#include "TPad.h"
+#include "TLatex.h"
+#include "TLine.h"
+#include "TBox.h"
+#include "TImage.h"
+
 
 #include <vector>
 #include <time.h>
@@ -59,39 +60,59 @@ class Style {
  public:
 
   Style();
-  Style(string);
-  Style(const Style&);
-  Style& operator=(const Style&);
+  Style(string, double);
   ~Style();
 
   const vector<HistInfo*>& getHistograms() {return histograms;}
-
   
   void read_info(string);
   void setStyle();
   TStyle* getStyle();
-  double getPadRatio() {return padratio;}
-  double getHeightRatio() {return heightratio;}
-  double getRebinLimit() {return rebinlimit;}
-  bool getDivideBins() {return dividebins;}
-  bool getBinLimit() {return binlimit;}
-  bool getDoOverflow() {return dooverflow;}
-
+  void fixOverlay();
+  void setTDRStyle();
+  void tdrGrid(bool);
   int getColor();
   void resetColoring();
+  void CMS_lumi( TPad* pad, int iPosX=10 );
+
   
  private:
   void setupGeneral(ConfigFile&);
 
-  TStyle* styler;
+  TStyle *tdrStyle;
+  double lumi;
 
   vector<HistInfo*> histograms;
 
-  int binlimit = 9;
-  double padratio = 3, heightratio = 15, rebinlimit = 0.3, dooverflow= 0;
-  bool dividebins = false;
-  vector<int>  color;
   int color_iter;
+
+  ///////CMS text//////
+  
+  TString cmsText     = "CMS";
+  float cmsTextFont   = 61;  // default is helvetic-bold
+  float extraTextFont = 52;  // default is helvetica-italics
+  float lumiTextSize     = 0.6;
+  float lumiTextOffset   = 0.2;
+  float cmsTextSize      = 0.75;
+  float cmsTextOffset    = 0.1;  // only used in outOfFrame version
+  float relPosX    = 0.045;
+  float relPosY    = 0.035;
+  float relExtraDY = 1.2;
+  float extraOverCmsTextSize  = 0.76;  // ratio of "CMS" and extra text size
+
+
+  ////////////////////////////////////////////
+  /////// Values set in config ///////////////
+  ////////////////////////////////////////////
+
+  string extraText;
+  string lumiText;
+  bool drawLogo;
+  bool writeExtraText;
+  vector<int>  color;
+
+
+  
 };
 
 #endif

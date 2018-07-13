@@ -16,6 +16,7 @@ bool process_dummy(string inConfig);
 ////Default output and style config file names.  Don't like that they are global, but works
 string output = "output.root";
 string stylename = "default";
+double lumi;
 
 int main(int argc, char* argv[]) {
   if(argc < 2) {
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
 
   
 
-  Style* stylez = new Style("style/" + stylename);
+  Style* stylez = new Style("style/" + stylename, lumi);
   fullPlot.setStyle(stylez);
 
   int totalfiles = 0;
@@ -89,7 +90,8 @@ int main(int argc, char* argv[]) {
 
 
   /// Main loop of function
-  fullPlot.CreateStack(final, logfile);
+  fullPlot.CreateStack(final);
+
 
   cout << "Finished making Stack Plot" << endl;
 
@@ -110,7 +112,7 @@ void read_info(string filename, map<string, Normer*>& plots) {
 
   vector<string> stemp;
   string line;
-  double lumi;
+
 
   while(getline(info_file, line)) {
     tokenizer tokens(line, sep);
