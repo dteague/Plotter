@@ -180,8 +180,9 @@ void Normer::MergeRootfile( TDirectory *target) {
       normFactor.at(nplot) = 1.0/events->GetBinContent(1);
       nextsource = (TFile*)sourcelist->After( nextsource );
     }
+
   }
-  delete events;
+
 
   // loop over all keys in this directory
   TChain *globChain = 0;

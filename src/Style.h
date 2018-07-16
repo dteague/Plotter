@@ -74,7 +74,9 @@ class Style {
   int getColor();
   void resetColoring();
   void CMS_lumi( TPad* pad, int iPosX=10 );
-
+  const char* getDir() { return directory.c_str();}
+  
+  bool doStackSignal() {return stackSignal;}
   
  private:
   void setupGeneral(ConfigFile&);
@@ -110,8 +112,8 @@ class Style {
   bool drawLogo;
   bool writeExtraText;
   vector<int>  color;
-
-
+  bool stackSignal;
+  string directory;
   
 };
 

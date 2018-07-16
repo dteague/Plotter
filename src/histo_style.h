@@ -4,6 +4,7 @@
 #include "config.h"
 #include <vector>
 #include <iostream>
+#include <limits>
 
 using namespace std;
 
@@ -17,6 +18,10 @@ class HistInfo {
   bool useLogX() {return logX;}
   const char* getHistname() {return histname.c_str();}
   const char* getTitle() {return title.c_str();}
+  double getLow() {return low;}
+  const char* getXaxisTitle() {return xaxistitle.c_str();}
+  const char* getYaxisTitle() {return yaxistitle.c_str();}
+  
   
  private:
   
@@ -27,8 +32,9 @@ class HistInfo {
   string histname, title;
   bool sortSmToLg;
   bool logY, logX;
-  
-  
+  double low;
+  string xaxistitle, yaxistitle;
+
 };
 
 #endif

@@ -5,10 +5,15 @@ using namespace std;
 HistInfo::HistInfo(string histname_, ConfigFile& config) : histname(histname_) {
   setBinning(config.Value(histname, "binning"));
   sortSmToLg = config.Value(histname, "sortSToL", true);
-  logY = config.Value(histname, "LogY", false);
-  logX = config.Value(histname, "LogX", false);
+  logY = config.Value(histname, "logY", false);
+  logX = config.Value(histname, "logX", false);
   title = (string)config.Value(histname, "title", "");
+  low = config.Value(histname, "lowValue", 10000000);
+  xaxistitle = (string)config.Value(histname, "xTitle", "");
+  yaxistitle = (string)config.Value(histname, "yTitle", "Events");
 }
+
+
 
 
 void HistInfo::setBinning(string line) {

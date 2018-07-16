@@ -55,7 +55,7 @@ about the graph are more important.
 #include <sstream>
 #include <iomanip>
 #include <regex>
-
+#include <limits>
 
 #include "Normalizer.h"
 #include "Style.h"
@@ -84,7 +84,7 @@ class Plotter {
   TLegend* createLeg(const TList* bgl, const TList* sigl);
 
   TList* createWorkingList(TList* fileList, const char* name, int nBins, double* rebinning);
-  THStack* getStack(TList* histos, const char* histoName);
+  THStack* getStack(TList* histos, const char* histoName, bool);
   
   
   double* getBinning(vector<pair<int, double>> binning, double start, double end);

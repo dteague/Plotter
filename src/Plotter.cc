@@ -25,11 +25,13 @@ void Plotter::CreateStack( TDirectory *target) {
     TH1D* refHisto = 0;
     TH1D* fillHisto = 0;
     const char* histname = histos->getHistname();
-    
+
+    referenceFile->cd(styler->getDir());
     referenceFile->GetObject(histname, refHisto);
-    auto bins_test = getBinning(histos->getBinning(), refHisto->GetXaxis()->GetXmin(),refHisto->GetXaxis()->GetXmax() );
+    double lowbin = (histos->getLow() < 100000) ? histos->getLow() : refHisto->GetXaxis()->GetXmin();
+    auto bins_test = getBinning(histos->getBinning(), lowbin ,refHisto->GetXaxis()->GetXmax() );
     int nBins = numberBinning(histos->getBinning());
-    nBins = nBins > 0 ? nBins : (refHisto->GetXaxis()->GetXmax() -refHisto->GetXaxis()->GetXmin())/histos->getBinning().at(0).second;
+    nBins = nBins > 0 ? nBins : (refHisto->GetXaxis()->GetXmax() - lowbin)/histos->getBinning().at(0).second;
 
 
     TList* dataHistos = createWorkingList(&dataFiles, histname, nBins, bins_test);
@@ -37,16 +39,24 @@ void Plotter::CreateStack( TDirectory *target) {
     TList* sigHistos = createWorkingList(&sigFiles, histname, nBins, bins_test);
 
     setSignal(sigHistos);
-    THStack* stack = getStack(bgHistos, histname);
+    THStack* stack = getStack(bgHistos, histname, histos->useSortSmToLg());
 
     TLegend* leg = createLeg(stack->GetHists(), sigHistos);
-
-    cout << histos->getHistname() << endl;
     target->cd();
     TCanvas *c = new TCanvas(histname, histname);//403,50,600,600);
-    stack->SetTitle(histos->getTitle());
+    if(styler->doStackSignal()) {
+      for(auto sigh : *sigHistos) stack->Add((TH1D*)sigh);
+    }
+
     stack->Draw();
-    for(auto sigh : *sigHistos) sigh->Draw("same");
+    stack->SetTitle(histos->getTitle());
+    stack->GetXaxis()->SetTitle(histos->getXaxisTitle());
+    stack->GetYaxis()->SetTitle(histos->getYaxisTitle());
+
+    if(!styler->doStackSignal()) {
+      for(auto sigh : *sigHistos) sigh->Draw("same");
+    }
+
     leg->Draw();
     c->cd();
     styler->CMS_lumi((TPad*)gPad);
@@ -63,14 +73,21 @@ TList* Plotter::createWorkingList(TList* fileList, const char* name, int nBins, 
   TH1D* tmphist = 0;
   TList* rebinnedHistos = new TList();
   for(auto file : *fileList) {
+    ((TFile*)file)->cd(styler->getDir());
     ((TFile*)file)->GetObject(name, tmphist);
     rebinnedHistos->Add((TH1D*)tmphist->Rebin(nBins, file->GetTitle(), rebinning));
+  }
+
+  for(auto files : *rebinnedHistos) {
+    TH1D* workfile = (TH1D*)files;
+    int Nbins = workfile->GetXaxis()->GetNbins();
+    workfile->SetBinContent(Nbins,workfile->GetBinContent(Nbins)+workfile->GetBinContent(Nbins+1));
   }
   return rebinnedHistos;
 }
 
 
-THStack* Plotter::getStack(TList* histos, const char* histoName) {
+THStack* Plotter::getStack(TList* histos, const char* histoName, bool sortSmToLg) {
   TH1D* tmp = 0;
   THStack* stack = new THStack(histoName, histoName);
   
@@ -80,15 +97,15 @@ THStack* Plotter::getStack(TList* histos, const char* histoName) {
     for(int j = 1; j < tmp->GetXaxis()->GetNbins()+1; j++) {
       tmp->SetBinError(j, 0);
     }
-    tmp->SetLineColor(color);
-    tmp->SetFillStyle(1001);
+    
+    tmp->SetLineColor(TColor::GetColorDark(color));
+    tmp->SetLineWidth(2);
     tmp->SetFillColor(color);
       
     stack->Add(tmp);
-
   }
 
-  stack  = sortStack(stack, true);
+  stack  = sortStack(stack, sortSmToLg);
   return stack;
 }
 
@@ -100,8 +117,8 @@ void Plotter::setSignal(TList* signal) {
       hist->SetBinError(j,0);
     }
     hist->SetLineColor(color);
-    hist->SetLineWidth(3);
-    hist->SetLineStyle(2);
+    hist->SetLineWidth(4);
+    hist->SetLineStyle(7);
   }
 }
 
@@ -152,7 +169,7 @@ TLegend* Plotter::createLeg(const TList* bgl, const TList* sigl) {
   }
 
   for(auto histos: *sigl) {
-    leg->AddEntry(histos, histos->GetName(), "lep");
+    leg->AddEntry(histos, histos->GetName(), "f");
   }
 
   // TH1* mcErrorleg = new TH1I("mcErrorleg", "BG stat. uncer.", 100, 0.0, 4.0);
@@ -285,6 +302,7 @@ int Plotter::numberBinning(vector<pair<int, double>> &binning) {
   }
   return count;
 }
+
 
 
 void Plotter::setupHistogram() {
