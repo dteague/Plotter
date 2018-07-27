@@ -33,10 +33,10 @@ void Plotter::CreateStack( TDirectory *target) {
     int nBins = numberBinning(histos->getBinning());
     nBins = nBins > 0 ? nBins : (refHisto->GetXaxis()->GetXmax() - lowbin)/histos->getBinning().at(0).second;
 
-
-    TList* dataHistos = createWorkingList(&dataFiles, histname, nBins, bins_test);
-    TList* bgHistos = createWorkingList(&bgFiles, histname, nBins, bins_test);
-    TList* sigHistos = createWorkingList(&sigFiles, histname, nBins, bins_test);
+    TH1D* errorHist = new TH1D("errorHist", "errorHist", nBins, bins_test);
+    TList* dataHistos = createWorkingList(&dataFiles, histname, nBins, bins_test, errorHist);
+    TList* bgHistos = createWorkingList(&bgFiles, histname, nBins, bins_test, errorHist);
+    TList* sigHistos = createWorkingList(&sigFiles, histname, nBins, bins_test, errorHist);
 
     setSignal(sigHistos);
     THStack* stack = getStack(bgHistos, histname, histos->useSortSmToLg());
@@ -48,15 +48,20 @@ void Plotter::CreateStack( TDirectory *target) {
       for(auto sigh : *sigHistos) stack->Add((TH1D*)sigh);
     }
 
+    TGraphErrors* errorstack = createError(errorHist);
+    
     stack->Draw();
     stack->SetTitle(histos->getTitle());
     stack->GetXaxis()->SetTitle(histos->getXaxisTitle());
     stack->GetYaxis()->SetTitle(histos->getYaxisTitle());
-
+    double maximum = stack->GetMaximum();
+    stack->SetMaximum(maximum*styler->getMaxRatio());
+    
     if(!styler->doStackSignal()) {
       for(auto sigh : *sigHistos) sigh->Draw("same");
     }
 
+    errorstack->Draw("2");
     leg->Draw();
     c->cd();
     styler->CMS_lumi((TPad*)gPad);
@@ -65,11 +70,13 @@ void Plotter::CreateStack( TDirectory *target) {
     delete [] bins_test;
     delete stack;
     delete leg;
+    delete errorHist;
+    delete errorstack;
   }
 
 }  
 
-TList* Plotter::createWorkingList(TList* fileList, const char* name, int nBins, double* rebinning) {
+TList* Plotter::createWorkingList(TList* fileList, const char* name, int nBins, double* rebinning, TH1D* errorHist) {
   TH1D* tmphist = 0;
   TList* rebinnedHistos = new TList();
   for(auto file : *fileList) {
@@ -82,6 +89,7 @@ TList* Plotter::createWorkingList(TList* fileList, const char* name, int nBins, 
     TH1D* workfile = (TH1D*)files;
     int Nbins = workfile->GetXaxis()->GetNbins();
     workfile->SetBinContent(Nbins,workfile->GetBinContent(Nbins)+workfile->GetBinContent(Nbins+1));
+    errorHist->Add(workfile);
   }
   return rebinnedHistos;
 }
@@ -89,7 +97,7 @@ TList* Plotter::createWorkingList(TList* fileList, const char* name, int nBins, 
 
 THStack* Plotter::getStack(TList* histos, const char* histoName, bool sortSmToLg) {
   TH1D* tmp = 0;
-  THStack* stack = new THStack(histoName, histoName);
+  THStack* stack = new THStack("stack", "stack");
   
   for(auto hwork : *histos) {
     int color = styler->getColor();
@@ -172,14 +180,15 @@ TLegend* Plotter::createLeg(const TList* bgl, const TList* sigl) {
     leg->AddEntry(histos, histos->GetName(), "f");
   }
 
-  // TH1* mcErrorleg = new TH1I("mcErrorleg", "BG stat. uncer.", 100, 0.0, 4.0);
-  // mcErrorleg->SetLineWidth(1);
-  // mcErrorleg->SetFillColor(kMagenta+1);
-  // mcErrorleg->SetFillStyle(3004);
-  // mcErrorleg->SetLineColor(kMagenta+1);
-  // leg->AddEntry(mcErrorleg,"BG stat. uncer.","f");
+  TH1* mcErrorleg = new TH1I("mcErrorleg", "BG stat. uncer.", 100, 0.0, 4.0);
+  mcErrorleg->SetLineWidth(1);
+  mcErrorleg->SetFillColor(1);
+  mcErrorleg->SetFillStyle(3013);
+  mcErrorleg->SetLineColor(1);
+  leg->AddEntry(mcErrorleg,"BG stat. uncer.","f");
   leg->SetFillStyle(0);
 
+  delete mcErrorleg;
   return leg;
 }
 
@@ -308,5 +317,67 @@ int Plotter::numberBinning(vector<pair<int, double>> &binning) {
 void Plotter::setupHistogram() {
   styler->resetColoring();
 
+}
+
+vector<string> Plotter::getDirectories() {
+  TList* tmplist = referenceFile->GetListOfKeys();
+  vector<string> dirs;
+  for(auto key : *tmplist) {
+    TObject* obj = ((TKey*)key)->ReadObj();
+    if ( obj->IsA()->InheritsFrom( TDirectory::Class() ) ) {
+      dirs.push_back(obj->GetTitle());
+    }
+  }
+  return dirs;
+}
+
+vector<pair<double,double>> Plotter::eventInfo(string path) {
+  vector<pair<double,double>> info = eventInfoHelper(path, dataFiles);
+  vector<pair<double,double>> tmp = eventInfoHelper(path, bgFiles);
+  info.insert(info.end(), tmp.begin(), tmp.end());
+  tmp = eventInfoHelper(path, sigFiles);
+  info.insert(info.end(), tmp.begin(), tmp.end());
+  return info;
+}
+
+vector<pair<double, double>> Plotter::eventInfoHelper(string path, TList& list) {
+  string filename = (path != "all") ? "hall_" + path + "_met" : "hall_met";
+  vector<pair<double, double>> info;
+  for(auto file : list) {
+    ((TFile*)file)->cd(path.c_str());
+    TH1D* tmp = 0;
+    gDirectory->GetObject((filename.c_str()), tmp);
+    double error = 0;
+    double total = tmp->IntegralAndError(0,tmp->GetXaxis()->GetNbins()+1, error);
+    info.push_back(make_pair(total, error));
+  }
+  return info;
+}
+
+TGraphErrors* Plotter::createError(const TH1* error) {
+  int Nbins =  error->GetXaxis()->GetNbins();
+  Double_t* mcX = new Double_t[Nbins];
+  Double_t* mcY = new Double_t[Nbins];
+  Double_t* mcErrorX = new Double_t[Nbins];
+  Double_t* mcErrorY = new Double_t[Nbins];
+
+  for(int bin=0; bin < error->GetXaxis()->GetNbins(); bin++) {
+    mcY[bin] = error->GetBinContent(bin+1);
+    mcErrorY[bin] = error->GetBinError(bin+1);
+    mcX[bin] = error->GetBinCenter(bin+1);
+    mcErrorX[bin] = error->GetBinWidth(bin+1) * 0.5;
+  }
+  TGraphErrors *mcError = new TGraphErrors(error->GetXaxis()->GetNbins(),mcX,mcY,mcErrorX,mcErrorY);
+
+  mcError->SetFillColor(1);
+  mcError->SetFillStyle(3013);
+  mcError->SetMarkerStyle(20);
+  mcError->SetMarkerStyle(0);
+
+  delete[] mcX;
+  delete[] mcY;
+  delete[] mcErrorX;
+  delete[] mcErrorY;
+  return mcError;
 }
 

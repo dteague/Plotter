@@ -38,7 +38,7 @@ Plotter class
 #include "TLine.h"
 #include "TBox.h"
 #include "TImage.h"
-
+#include <TColor.h>
 
 #include <vector>
 #include <time.h>
@@ -75,6 +75,7 @@ class Style {
   void resetColoring();
   void CMS_lumi( TPad* pad, int iPosX=10 );
   const char* getDir() { return directory.c_str();}
+  double getMaxRatio() { return maxRatio;}
   
   bool doStackSignal() {return stackSignal;}
   
@@ -114,7 +115,7 @@ class Style {
   vector<int>  color;
   bool stackSignal;
   string directory;
-  
+  double maxRatio;
 };
 
 #endif

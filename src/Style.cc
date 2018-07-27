@@ -40,12 +40,14 @@ void Style::setupGeneral(ConfigFile& config) {
   writeExtraText = config.Value("General", "WriteExtraText", false);
   stackSignal = config.Value("General", "StackSignal", false);
   directory = (string)config.Value("General", "Directory", "all");
+  maxRatio = config.Value("General", "MaxRatio", 1.0);
   
   string current = "";
   for(auto it : color_line) {
     if(it == '[' || isspace(it)) continue;
     else if(it == ']' || it == ',') {
-      color.push_back(stoi(current));
+      if(current.size() > 3) color.push_back(TColor::GetColor(current.c_str()));
+      else color.push_back(stoi(current));
       current = "";
     } else current.push_back(it);
   }

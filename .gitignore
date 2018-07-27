@@ -10,3 +10,7 @@ log.txt
 PUStudy
 .dummyinfo
 *.pyc
+*log
+ratios/*
+*txt
+*C

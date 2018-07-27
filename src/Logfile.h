@@ -20,6 +20,8 @@ code a little cleaner.  Who doesn't love clean code?
 #include <fstream>
 #include <stdlib.h>
 #include <vector>
+#include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -34,10 +36,11 @@ class Logfile {
   /////Helper functions
   //// does the actual writing for the class
   void setHeader(vector<string>);
-  void addLine(vector<string>);
+  void addEventData(string, vector<pair<double,double>>);
   void setTrailer();
   bool replace(std::string& str, const std::string& from, const std::string& to);
-
+  template <typename T>
+  string to_string_with_precision(const T a_value, const int n);
   
  private:
   ofstream logfile;

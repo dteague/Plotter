@@ -2,42 +2,27 @@
 
 using namespace std;
 
-// template <typename T>
-// string to_string_with_precision(const T a_value, const int n)
-// {
-//   ostringstream out;
-//   out << fixed << setprecision(n) << a_value;
-//   return out.str();
-// }
+template <typename T>
+string Logfile::to_string_with_precision(const T a_value, const int n)
+{
+  ostringstream out;
+  out << fixed << setprecision(n) << a_value;
+  return out.str();
+}
 
 
-
-  // //// Loop to write cutflow to logfile
-  // TH1* events;
-  // current_sourcedir->GetObject("Events", events);
-
-  // if(events) {
-  //   vector<string> logEff;
-  //   string totalval = "";
-  //   logEff.push_back(current_sourcedir->GetName());
-
-  //   for(int i=0; i < FILE_ENUM_SIZE; i++) {
-  //     TFile* nextsource = (TFile*)FileList[i]->First();
-  //     while ( nextsource ) {
-  // 	nextsource->cd(path);
-  // 	gDirectory->GetObject("Events", events);
-  // 	totalval = to_string_with_precision(events->GetBinContent(2), 1);
-  // 	if(i != 0) totalval += " $\\pm$ " + to_string_with_precision(events->GetBinError(2), 1);
-  // 	logEff.push_back(totalval);
-  // 	nextsource = (TFile*)FileList[i]->After( nextsource );
-  //     }
-  //   }
-  //   logfile.addLine(logEff);
-  //   delete events;
-  // }
-  // events = nullptr;
-
-
+void Logfile::addEventData(string dir, vector<pair<double, double>> info) {
+  logfile << dir << " & ";
+  pair<double, double> last = info.back();
+  info.pop_back();
+  for(auto data : info ) {
+    logfile << to_string_with_precision(data.first, 2) << " $\\pm$ ";
+    logfile << to_string_with_precision(data.second, 2) << " & ";
+    
+  }
+  logfile << to_string_with_precision(last.first, 2) << " $\\pm$ ";
+  logfile << to_string_with_precision(last.second, 2) << " \\\\ \\hline" << endl;
+}
 
 
 //// set up header for writing table.  Input plotnames in vector
@@ -51,25 +36,16 @@ void Logfile::setHeader(vector<string> plotnames) {
   }
   logfile << " }" << endl << "\\hline" << endl << "Process";
 
-  for(auto sample_name:  plotnames) {
-    string logfile_name = sample_name.substr(0, sample_name.length()-5);
-    replace(logfile_name, "#", "\\");
+  for(auto logfile_name:  plotnames) {
+    replace(logfile_name, "#", "$\\");
     replace(logfile_name, "_", "-");
+    if(logfile_name.find("$") != string::npos) logfile_name.push_back('$');
     logfile << " & " << logfile_name;
   }
     
   logfile << "\\\\ \\hline" << endl;
 }
 
-//// write actual cutflow.  Takes values and puts a & between each value
-void Logfile::addLine(vector<string> values) {
-  vector<string>::iterator it = values.begin();
-  logfile << *it;
-  for(++it; it != values.end(); it++) {
-    logfile << " & " << *it;
-  }
-  logfile << " \\\\ \\hline" << endl;
-}
 
 //// end table
 void Logfile::setTrailer() {

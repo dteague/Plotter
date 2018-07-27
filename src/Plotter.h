@@ -29,6 +29,7 @@ about the graph are more important.
 #include <TClass.h>
 #include <TKey.h>
 #include <TGraphAsymmErrors.h>
+#include <TGraphErrors.h>
 #include <TChain.h>
 #include <TCanvas.h>
 #include <TText.h>
@@ -82,24 +83,29 @@ class Plotter {
   void getPresetBinning(string);
   void setSignal(TList*);
   TLegend* createLeg(const TList* bgl, const TList* sigl);
+  vector<string> getDirectories();
+  TGraphErrors* createError(const TH1*error);
 
-  TList* createWorkingList(TList* fileList, const char* name, int nBins, double* rebinning);
+  
+  TList* createWorkingList(TList* fileList, const char* name, int nBins, double* rebinning, TH1D* errorHist);
   THStack* getStack(TList* histos, const char* histoName, bool);
   
   
   double* getBinning(vector<pair<int, double>> binning, double start, double end);
   int numberBinning(vector<pair<int, double>> &binning);
-
+  vector<pair<double,double>> eventInfo(string path);
+  
  private:
   TList dataFiles, bgFiles, sigFiles;
 
   Style* styler;
 
- bool ssqrtsb = true, onlyTop = false;
+  bool ssqrtsb = true, onlyTop = false;
   Bottom bottomType = Ratio;
   static unordered_map<string, string> latexer;
 
   void setupHistogram();
+  vector<pair<double, double>> eventInfoHelper(string path, TList& list);
   
   THStack* sortStack(THStack*, bool);
 

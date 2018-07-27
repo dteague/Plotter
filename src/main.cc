@@ -9,7 +9,7 @@ using namespace std;
 
 ///// Read in config file that is used to find the files to normalize 
 /// and then put in the Plotter
-void read_info(string, map<string, Normer*>&);
+void read_info(string, vector<Normer*>&);
 int getModTime(const char *path);
 bool process_dummy(string inConfig);
 
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 
   bool ssqrtsb = true;
 
-  map<string, Normer*> plots;
+  vector<Normer*> plots;
   Plotter fullPlot;
   bool needToRenorm = false;
 
@@ -76,9 +76,9 @@ int main(int argc, char* argv[]) {
   fullPlot.setStyle(stylez);
 
   int totalfiles = 0;
-  for(auto plot_pair: plots) {
-    if(needToRenorm) plot_pair.second->setUse();
-    fullPlot.addFile(*plot_pair.second);
+  for(auto plotters: plots) {
+    if(needToRenorm) plotters->setUse();
+    fullPlot.addFile(*plotters);
   }
 
   cout << "Finished Normalization" << endl;
@@ -86,8 +86,10 @@ int main(int argc, char* argv[]) {
   TFile* final = new TFile(output.c_str(), "RECREATE");
   Logfile logfile;
   logfile.setHeader(fullPlot.getFilenames("all"));
-
-
+  //  logfile.
+  for(auto dirs : fullPlot.getDirectories()) {
+    logfile.addEventData(dirs, fullPlot.eventInfo(dirs));
+  }
 
   /// Main loop of function
   fullPlot.CreateStack(final);
@@ -100,7 +102,7 @@ int main(int argc, char* argv[]) {
 }
 
 ///// Reads in config files and normalizes the files
-void read_info(string filename, map<string, Normer*>& plots) {
+void read_info(string filename, vector<Normer*>& plots) {
   typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
   ifstream info_file(filename);
   boost::char_separator<char> sep(", \t");
@@ -113,6 +115,7 @@ void read_info(string filename, map<string, Normer*>& plots) {
   vector<string> stemp;
   string line;
 
+  vector<string> normer_names;
 
   while(getline(info_file, line)) {
     tokenizer tokens(line, sep);
@@ -127,14 +130,19 @@ void read_info(string filename, map<string, Normer*>& plots) {
       if(stemp[0].find("lumi") != string::npos) lumi = stod(stemp[1]);
       else if(stemp[0].find("output") != string::npos) output = stemp[1];
       else if(stemp[0].find("style") != string::npos) stylename = stemp[1];
-      else if(plots.find(stemp[1]) == plots.end()) plots[stemp[1]] = new Normer(stemp);
-      else plots[stemp[1]]->setValues(stemp);
+      else if(find(normer_names.begin(), normer_names.end(), stemp[1]) == normer_names.end()) {
+	plots.push_back(new Normer(stemp));
+	normer_names.push_back(stemp[1]); 
+      } else {
+	int spot = find(normer_names.begin(), normer_names.end(), stemp[1]) - normer_names.begin();
+	plots.at(spot)->setValues(stemp);
+      }
     } 
   }
   info_file.close();
 
-  for(auto map_pair: plots) {
-    map_pair.second->setLumi(lumi);
+  for(auto plotters: plots) {
+    plotters->setLumi(lumi);
   }
 }
 
