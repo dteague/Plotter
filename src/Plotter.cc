@@ -28,6 +28,7 @@ void Plotter::CreateStack( TDirectory *target) {
 
     referenceFile->cd(styler->getDir());
     referenceFile->GetObject(histname, refHisto);
+    cout << histname << endl;
     double lowbin = (histos->getLow() < 100000) ? histos->getLow() : refHisto->GetXaxis()->GetXmin();
     auto bins_test = getBinning(histos->getBinning(), lowbin ,refHisto->GetXaxis()->GetXmax() );
     int nBins = numberBinning(histos->getBinning());
@@ -325,6 +326,7 @@ vector<string> Plotter::getDirectories() {
   for(auto key : *tmplist) {
     TObject* obj = ((TKey*)key)->ReadObj();
     if ( obj->IsA()->InheritsFrom( TDirectory::Class() ) ) {
+      if(strcmp(obj->GetTitle(),"Eff") == 0) continue;
       dirs.push_back(obj->GetTitle());
     }
   }
@@ -341,16 +343,18 @@ vector<pair<double,double>> Plotter::eventInfo(string path) {
 }
 
 vector<pair<double, double>> Plotter::eventInfoHelper(string path, TList& list) {
-  string filename = (path != "all") ? "hall_" + path + "_met" : "hall_met";
+  string filename = "Met";
   vector<pair<double, double>> info;
   for(auto file : list) {
     ((TFile*)file)->cd(path.c_str());
     TH1D* tmp = 0;
     gDirectory->GetObject((filename.c_str()), tmp);
+    if(tmp == nullptr) break;
     double error = 0;
     double total = tmp->IntegralAndError(0,tmp->GetXaxis()->GetNbins()+1, error);
     info.push_back(make_pair(total, error));
   }
+  for(auto p : info) cout << p.first << " " << p.second << endl;
   return info;
 }
 

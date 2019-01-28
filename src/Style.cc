@@ -39,7 +39,7 @@ void Style::setupGeneral(ConfigFile& config) {
   extraText  = (string)config.Value("General", "ExtraText", "Preliminary");
   writeExtraText = config.Value("General", "WriteExtraText", false);
   stackSignal = config.Value("General", "StackSignal", false);
-  directory = (string)config.Value("General", "Directory", "all");
+  directory = (string)config.Value("General", "Directory", "Final");
   maxRatio = config.Value("General", "MaxRatio", 1.0);
   
   string current = "";
